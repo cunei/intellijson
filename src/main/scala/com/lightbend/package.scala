@@ -71,6 +71,8 @@ package object intellijson {
   }
 
 
+  abstract class Event extends Message
+
   /*************************************************************
     Side effect events
     {
@@ -79,7 +81,7 @@ package object intellijson {
       "message: "Foo."
     }
     */
-  case class SideEffectEvent(typ: String, level: String, message: String) extends Message {
+  case class SideEffectEvent(typ: String, level: String, message: String) extends Event {
     def serialize = compact(render(("type" -> typ) ~ ("level" -> level) ~ ("message" -> message)))
   }
 
