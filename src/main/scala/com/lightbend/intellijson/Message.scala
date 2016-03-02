@@ -1,7 +1,7 @@
 package com.lightbend.intellijson
 
 import org.json4s.JValue
-import org.json4s.JsonAST.{JArray, JField, JObject, JString}
+import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods._
 
@@ -21,6 +21,7 @@ object Message {
       case Query.selector => Query.deserialize(j)
       case SideEffectEvent.selector => SideEffectEvent.deserialize(j)
       case StatusEvent.selector => StatusEvent.deserialize(j)
+      case ExecutionEvent.selector => ExecutionEvent.deserialize(j)
       case _ => sys.error("JSON representation of message does not contain a known type. Found: " + selector)
     }
   }
@@ -178,5 +179,31 @@ object StatusEventProcessing extends StatusEventDeserializer[StatusEventProcessi
       JField("current_command", JString(currentCommand)) <- l
     } yield StatusEventProcessing(currentCommand, partialDeserialize(j))
     status
+  }
+}
+
+
+/** ***********************************************************
+  * Execution events
+{
+  "type": "execution_event",
+  "command": "project foo",
+  "success": true
+}
+  */
+case class ExecutionEvent(command: String, success:Boolean) extends Event {
+  def serialize = compact(render(("type" -> ExecutionEvent.selector) ~ ("command" -> command) ~ ("success" -> success)))
+}
+
+object ExecutionEvent extends Deserializer[ExecutionEvent] {
+  val selector = "execution_event"
+
+  def deserialize(j: JValue) = {
+    val List(execution) = for {
+      JObject(l) <- j
+      JField("command", JString(command)) <- l
+      JField("success", JBool(success)) <- l
+    } yield ExecutionEvent(command, success)
+    execution
   }
 }

@@ -6,27 +6,18 @@ package com.lightbend.intellijson
 
 
 object IntelliJson extends App {
-  val se = SideEffectEvent("5", "nothing for you here")
-  println(se)
-  val s = se.serialize
-  println(s)
-  println(Message.deserialize(s))
-
-  val ce = Command("no commands for you here")
-  println(ce)
-  val c = ce.serialize
-  println(c)
-  println(Message.deserialize(c))
-
-  val re = StatusEventReady(Seq("com1", "com2", "com3"))
-  println(re)
-  val r = re.serialize
-  println(r)
-  println(Message.deserialize(r))
-
-  val pe = StatusEventProcessing("someCommand", Seq("com1", "com2", "com3"))
-  println(pe)
-  val p = pe.serialize
-  println(p)
-  println(Message.deserialize(p))
+  def test(me:Message) = {
+    println(me)
+    val m = me.serialize
+    println(m)
+    val m2 = Message.deserialize(m)
+    println(m2)
+    if (me != m2) sys.error("Difference found.")
+  }
+  test(SideEffectEvent("5", "nothing for you here"))
+  test(Command("no commands for you here"))
+  test(StatusEventReady(Seq("com1", "com2", "com3")))
+  test(StatusEventProcessing("someCommand", Seq("com1", "com2", "com3")))
+  test(ExecutionEvent("someCommand",true))
+  test(ExecutionEvent("someCommand",false))
 }
