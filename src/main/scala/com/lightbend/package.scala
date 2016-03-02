@@ -1,5 +1,6 @@
 package com.lightbend
 
+import org.json4s.JValue
 import org.json4s.JsonAST.{JField, JObject, JString}
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods._
@@ -14,85 +15,96 @@ package object intellijson {
   }
 
   object Message {
-    def deserialize[T <: Message](s: String)(implicit instance: Deserializer[T]) =
-      instance.deserialize(s)
+    def deserialize(s: String) = {
+      val j = parse(s)
+      val JString(selector) = (j \ "type")
+      selector match {
+        case Command.selector => Command.deserialize(j)
+        case Query.selector => Query.deserialize(j)
+        case SideEffectEvent.selector => SideEffectEvent.deserialize(j)
+        case _ => sys.error("JSON representation of message does not contain a known type. Found: " + selector)
+      }
+    }
+
+    //    def deserialize[T <: Message](o: JObject)(implicit instance: Deserializer[T]) =
+    //      instance.deserialize(o)
   }
 
   abstract class Deserializer[T <: Message] {
-    def deserialize(s: String): T
+    def deserialize(o: JValue): T
+
+    val selector: String
   }
 
 
-  /*************************************************************
-    Command
-    Sender: build client
-    command_line field contains exactly what the humans would type into sbt shell.
-    {
-      "type": "execution",
-      "command_line": "project foo"
-    }
-  */
-  case class Command(typ: String, command_line: String) extends Message {
-    def serialize = compact(render(("type" -> typ) ~ ("command_line" -> command_line)))
+  /** ***********************************************************
+    * Command
+    * Sender: build client
+    * command_line field contains exactly what the humans would type into sbt shell.
+    * {
+    * "type": "execution",
+    * "command_line": "project foo"
+    * }
+    */
+  case class Command(command_line: String) extends Message {
+    def serialize = compact(render(("type" -> Command.selector) ~ ("command_line" -> command_line)))
   }
 
-  implicit object CommandDeserializer extends Deserializer[Command] {
-    def deserialize(s: String) = {
+  object Command extends Deserializer[Command] {
+    val selector = "execution"
+
+    def deserialize(j: JValue) = {
       val List(command) = for {
-        JObject(l) <- parse(s)
-        JField("type", JString(typ)) <- l
+        JObject(l) <- j
         JField("command_line", JString(command_line)) <- l
-      } yield Command(typ, command_line)
+      } yield Command(command_line)
       command
     }
   }
 
 
-  /*************************************************************
-    Query
-    Sender: build client
-    See status events
-    {
-      "type": "status_query"
-    }
+  /** ***********************************************************
+    * Query
+    * Sender: build client
+    * See status events
+    * {
+    * "type": "status_query"
+    * }
     */
-  case class Query(typ: String) extends Message {
-    def serialize = compact(render(("type" -> typ)))
+  case class Query() extends Message {
+    def serialize = compact(render(("type" -> Query.selector)))
   }
 
-  implicit object QueryDeserializer extends Deserializer[Query] {
-    def deserialize(s: String) = {
-      val List(query) = for {
-        JObject(l) <- parse(s)
-        JField("type", JString(typ)) <- l
-      } yield Query(typ)
-      query
-    }
+  object Query extends Deserializer[Query] {
+    val selector = "status_query"
+
+    def deserialize(j: JValue) = Query()
   }
 
 
   abstract class Event extends Message
 
-  /*************************************************************
-    Side effect events
-    {
-      "type": "log_event",
-      "level": "info",
-      "message: "Foo."
-    }
+  /** ***********************************************************
+    * Side effect events
+    * {
+    * "type": "log_event",
+    * "level": "info",
+    * "message: "Foo."
+    * }
     */
-  case class SideEffectEvent(typ: String, level: String, message: String) extends Event {
-    def serialize = compact(render(("type" -> typ) ~ ("level" -> level) ~ ("message" -> message)))
+  case class SideEffectEvent(level: String, message: String) extends Event {
+    def serialize = compact(render(("type" -> SideEffectEvent.selector) ~ ("level" -> level) ~ ("message" -> message)))
   }
 
-  implicit object SideEffectEventDeserializer extends Deserializer[SideEffectEvent] {
-    def deserialize(s: String) = {
+  object SideEffectEvent extends Deserializer[SideEffectEvent] {
+    val selector = "log_event"
+
+    def deserialize(j: JValue) = {
       val List(sideEffect) = for {
-        JObject(l) <- parse(s)
-        JField("type", JString(typ)) <- l
+        JObject(l) <- j
         JField("level", JString(level)) <- l
         JField("message", JString(message)) <- l
-      } yield SideEffectEvent(typ, level, message)
+      } yield SideEffectEvent(level, message)
       sideEffect
     }
   }

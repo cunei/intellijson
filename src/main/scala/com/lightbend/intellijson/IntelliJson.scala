@@ -8,15 +8,15 @@ package com.lightbend.intellijson
 
 
 object IntelliJson extends App {
-  val se = SideEffectEvent("strange", "5", "nothing for you here")
+  val se = SideEffectEvent("5", "nothing for you here")
   println(se)
   val s = se.serialize
   println(s)
-  println(Message.deserialize[SideEffectEvent](s))
+  println(Message.deserialize(s))
 
-  val ce = Command("strange", "no commands for you here")
+  val ce = Command("no commands for you here")
   println(ce)
   val c = ce.serialize
   println(c)
-  println(Message.deserialize[Command](c))
+  println(Message.deserialize(c))
 }
