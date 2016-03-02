@@ -1,7 +1,5 @@
 package com.lightbend.intellijson
 
-import com.lightbend.intellijson.Message._
-
 /**
   * Created by cunei on 01/03/16.
   */

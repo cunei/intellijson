@@ -1,20 +1,22 @@
-package com.lightbend.intellijson
+package com.lightbend
 
-import org.json4s.DefaultFormats
 import org.json4s.JsonAST.{JField, JObject, JString}
 import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods._
 
 /**
-  * Created by cunei on 01/03/16.
+  * Created by cunei on 02/03/16.
   */
-abstract class Message {
-  def serialize: String
-}
+package object intellijson {
 
-object Message {
-  def deserialize[T <: Message](s: String)(implicit instance: Deserializer[T]) =
-    instance.deserialize(s)
+  abstract class Message {
+    def serialize: String
+  }
+
+  object Message {
+    def deserialize[T <: Message](s: String)(implicit instance: Deserializer[T]) =
+      instance.deserialize(s)
+  }
 
   abstract class Deserializer[T <: Message] {
     def deserialize(s: String): T
